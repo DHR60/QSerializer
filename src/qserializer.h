@@ -1,4 +1,4 @@
-﻿/*
+/*
  MIT License
 
  Copyright (c) 2020-2021 Agadzhanov Vladimir
@@ -24,6 +24,10 @@
                                                                                  */
 /*
  * version modified by Massimo Sacchi (RCH S.p.A.) to set QJsonDocument mode (setted as Compact mode)
+ */
+
+/*
+ * version modified by DHR60 to add support skip empty values and null
  */
 
 #ifndef QSERIALIZER_H
@@ -52,7 +56,7 @@
 #include <type_traits>
 #include <QDebug>
 
-#define QS_VERSION "1.2.1"
+#define QS_VERSION "1.2.2"
 
 /* Generate metaObject method */
 #define QS_META_OBJECT_METHOD \
@@ -75,11 +79,45 @@ Q_DECLARE_METATYPE(QDomElement)
 //enable QJsonDocument::Indented for readability, QJsonDocument::Compact for performance
 #define QS_JSON_DOC_MODE    QJsonDocument::Compact  //QJsonDocument::Indented
 
+struct QSerializerOptions {
+    bool skipEmpty = false;
+    bool skipNull = false;
+    bool skipNullLiterals = false;
+};
+
+typedef std::map<std::string, QSerializerOptions> QSerializerOptionsMap;
+
 class QSerializer {
     Q_GADGET
     QS_SERIALIZABLE
 public:
     virtual ~QSerializer() = default;
+
+    static QSerializerOptionsMap s_classOptions;
+    
+    static void setClassOptions(const std::string& className, const QSerializerOptions& options) {
+        s_classOptions[className] = options;
+    }
+    
+    static QSerializerOptions getClassOptions(const std::string& className) {
+        auto it = s_classOptions.find(className);
+        if (it != s_classOptions.end()) {
+            return it->second;
+        }
+        return QSerializerOptions();
+    }
+
+    bool shouldSkipEmpty() const {
+        return getClassOptions(metaObject()->className()).skipEmpty;
+    }
+    
+    bool shouldSkipNull() const {
+        return getClassOptions(metaObject()->className()).skipNull;
+    }
+
+    bool shouldSkipNullLiterals() const {
+        return getClassOptions(metaObject()->className()).skipNullLiterals;
+    }
 
 #ifdef QS_HAS_JSON
     /*! \brief  Convert QJsonValue in QJsonDocument as QByteArray. */
@@ -109,6 +147,10 @@ public:
     /*! \brief  Serialize all accessed JSON propertyes for this object. */
     QJsonObject toJson() const {
         QJsonObject json;
+        bool skipEmpty = shouldSkipEmpty();
+        bool skipNull = shouldSkipNull();
+        bool skipNullLiterals = shouldSkipNullLiterals();
+        
         for(int i = 0; i < metaObject()->propertyCount(); i++)
         {
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
@@ -120,8 +162,19 @@ public:
                 continue;
             }
 #endif
-
-            json.insert(metaObject()->property(i).name(), metaObject()->property(i).readOnGadget(this).toJsonValue());
+            QJsonValue value = metaObject()->property(i).readOnGadget(this).toJsonValue();
+            
+            // skip empty values and nulls
+            if ((skipEmpty && value.isString() && value.toString().isEmpty()) ||
+                (skipEmpty && value.isArray() && value.toArray().isEmpty()) || 
+                (skipEmpty && value.isObject() && value.toObject().isEmpty()) ||
+                (skipNull && value.isNull()) ||
+                (skipNullLiterals && value.isString() && value.toString() == "null"))
+            {
+                continue;
+            }
+            
+            json.insert(metaObject()->property(i).name(), value);
         }
         return json;
     }
@@ -173,6 +226,10 @@ public:
     QDomNode toXml() const {
         QDomDocument doc;
         QDomElement el = doc.createElement(metaObject()->className());
+        bool skipEmpty = shouldSkipEmpty();
+        // bool skipNull = shouldSkipNull();
+        bool skipNullLiterals = shouldSkipNullLiterals();
+        
         for(int i = 0; i < metaObject()->propertyCount(); i++)
         {
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
@@ -184,7 +241,24 @@ public:
                 continue;
             }
 #endif
-            el.appendChild(QDomNode(metaObject()->property(i).readOnGadget(this).value<QDomNode>()));
+            QDomNode nodeValue = QDomNode(metaObject()->property(i).readOnGadget(this).value<QDomNode>());
+            
+            bool isNullLiteral = false;
+            if (nodeValue.isElement()) {
+                QDomElement elem = nodeValue.toElement();
+                if (elem.hasChildNodes() && elem.firstChild().isText()) {
+                    isNullLiteral = (elem.firstChild().nodeValue() == "null");
+                }
+            }
+
+            // skip empty values and nulls
+            if ((skipEmpty && nodeValue.childNodes().isEmpty()) ||
+                (skipNullLiterals && isNullLiteral))
+            {
+                continue;
+            }
+            
+            el.appendChild(nodeValue);
         }
         doc.appendChild(el);
         return doc;
@@ -850,6 +924,80 @@ public:
     dict_##name##_t name = dict_##name##_t();                                               \
     QS_BIND_STL_DICT_OBJECTS(dict_##name##_t, name)                                         \
 
+#define QS_SERIALIZE_OPTIONS(className, skipEmpty, skipNull, skipNullLiterals) \
+    namespace { \
+        struct className##_options_initializer { \
+            className##_options_initializer() { \
+                QSerializerOptions opts; \
+                opts.skipEmpty = skipEmpty; \
+                opts.skipNull = skipNull; \
+                opts.skipNullLiterals = skipNullLiterals; \
+                QSerializer::setClassOptions(#className, opts); \
+            } \
+        }; \
+        static className##_options_initializer className##_options_init; \
+    }
+
+#define QS_SKIP_EMPTY(className) \
+    QS_SERIALIZE_OPTIONS(className, true, false, false)
+
+#define QS_SKIP_NULL(className) \
+    QS_SERIALIZE_OPTIONS(className, false, true, false)
+
+#define QS_SKIP_EMPTY_AND_NULL(className) \
+    QS_SERIALIZE_OPTIONS(className, true, true, false)
+
+#define QS_SKIP_EMPTY_AND_NULL_LITERALS(className) \
+    QS_SERIALIZE_OPTIONS(className, true, true, true)
+
+#if __cplusplus >= 201703L || (defined(_MSVC_LANG) && _MSVC_LANG >= 201703L)
+    // C++17 or later - use inline static
+    #define QS_INTERNAL_SERIALIZE_OPTIONS(skipEmpty, skipNull, skipNullLiterals) \
+        private: \
+            class OptionsInitializer { \
+            public: \
+                OptionsInitializer() { \
+                    QSerializerOptions opts; \
+                    opts.skipEmpty = skipEmpty; \
+                    opts.skipNull = skipNull; \
+                    opts.skipNullLiterals = skipNullLiterals; \
+                    QSerializer::setClassOptions(metaObject()->className(), opts); \
+                } \
+            }; \
+            inline static OptionsInitializer _optionsInitializer = OptionsInitializer();
+#else
+    // C++14 or earlier - use static member
+    #define QS_INTERNAL_SERIALIZE_OPTIONS(skipEmpty, skipNull, skipNullLiterals) \
+        private: \
+            static void _initializeOptions() { \
+                static bool initialized = false; \
+                if (!initialized) { \
+                    QSerializerOptions opts; \
+                    opts.skipEmpty = skipEmpty; \
+                    opts.skipNull = skipNull; \
+                    opts.skipNullLiterals = skipNullLiterals; \
+                    QSerializer::setClassOptions(staticMetaObject.className(), opts); \
+                    initialized = true; \
+                } \
+            } \
+            class OptionsInitializer { \
+            public: \
+                OptionsInitializer() { _initializeOptions(); } \
+            }; \
+            OptionsInitializer _optionsInitializer;
+#endif
+
+#define QS_INTERNAL_SKIP_EMPTY() \
+    QS_INTERNAL_SERIALIZE_OPTIONS(true, false, false)
+
+#define QS_INTERNAL_SKIP_NULL() \
+    QS_INTERNAL_SERIALIZE_OPTIONS(false, true, false)
+
+#define QS_INTERNAL_SKIP_EMPTY_AND_NULL() \
+    QS_INTERNAL_SERIALIZE_OPTIONS(true, true, false)
+
+#define QS_INTERNAL_SKIP_EMPTY_AND_NULL_LITERALS() \
+    QS_INTERNAL_SERIALIZE_OPTIONS(true, true, true)
 
 
 #endif // QSERIALIZER_H
