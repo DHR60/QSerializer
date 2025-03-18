@@ -91,6 +91,7 @@ u.fromXml(rawXml);
 | --------------------- | ------------------------------------------------------------ |
 | QSERIALIZABLE         | Make class or struct is serializable to QSerializer (override QMetaObject method and define Q_GADGET macro)                             |
 | QS_FIELD              | Create serializable simple field                             |
+| QS_FIELD_OPT          | Create serializable std::optional<T> field                   |
 | QS_COLLECTION         | Create serializable collection values of primitive types     |
 | QS_OBJECT             | Create serializable inner custom type object                 |
 | QS_COLLECTION_OBJECTS | Create serializable collection of custom type objects        |
@@ -99,3 +100,72 @@ u.fromXml(rawXml);
 | QS_STL_DICT           | Create serializable dictionary of primitive type values FOR STL DICTIONARY TYPES |
 | QS_STL_DICT_OBJECTS   | Create serializable dictionary of custom type values FOR STL DICTIONARY TYPES |
 | QS_SERIALIZABLE       | Override method metaObject and make class serializable       |
+
+## Skipping Empty and Null Values
+
+QSerializer supports skipping empty values and nulls during serialization. This can be configured at both the class and member level.
+
+### Class-Level Options
+
+| Macro                          | Description                                           |
+| ------------------------------ | ----------------------------------------------------- |
+| QS_SKIP_EMPTY                  | Skip empty values (empty strings, arrays, objects)    |
+| QS_SKIP_NULL                   | Skip null values                                      |
+| QS_SKIP_EMPTY_AND_NULL         | Skip both empty and null values                       |
+| QS_SKIP_EMPTY_AND_NULL_LITERALS| Skip empty, null and "null" string literals           |
+
+Example:
+```C++
+class User : public QSerializer
+{
+    Q_GADGET
+    QS_SERIALIZABLE
+    QS_SKIP_EMPTY // Will skip all empty values in this class
+
+    QS_FIELD(int, age)
+    QS_FIELD(QString, name)
+};
+```
+
+### Member-Level Options
+
+| Macro                                     | Description                                     |
+| ----------------------------------------- | ----------------------------------------------- |
+| QS_MEMBER_SKIP_EMPTY                      | Skip if the specific member is empty            |
+| QS_MEMBER_SKIP_NULL                       | Skip if the specific member is null             |
+| QS_MEMBER_SKIP_EMPTY_AND_NULL             | Skip if the specific member is empty or null    |
+| QS_MEMBER_SKIP_EMPTY_AND_NULL_LITERALS    | Skip empty, null and "null" string literals     |
+
+Example:
+```C++
+class User : public QSerializer
+{
+    Q_GADGET
+    QS_SERIALIZABLE
+
+    QS_FIELD(int, age)
+    QS_FIELD(QString, name)
+};
+
+// Skip empty name fields in User class
+QS_MEMBER_SKIP_EMPTY(User, name)
+```
+
+## std::optional Support
+
+QSerializer now supports `std::optional<T>` fields via the `QS_FIELD_OPT` macro:
+
+```C++
+class User : public QSerializer
+{
+    Q_GADGET
+    QS_SERIALIZABLE
+    
+    QS_FIELD(int, id)
+    QS_FIELD_OPT(QString, email) // Optional field
+};
+```
+
+When serializing:
+- If the optional has a value, it will be serialized normally
+- If the optional is empty, it will be serialized as null (unless configured to be skipped)
