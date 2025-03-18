@@ -186,4 +186,8 @@
    </item>
   </std_map_objects>
  </Dictionaries>
+  <EmptyClass>
+    <str4>test</str4>
+    <str5>test</str5>
+  </EmptyClass>
 </General>

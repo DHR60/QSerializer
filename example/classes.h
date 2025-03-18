@@ -1,29 +1,34 @@
 #ifndef CLASSES_H
 #define CLASSES_H
-#include <QSerializer>
 #include <QQueue>
+#include <QSerializer>
 #include <QStack>
+#include <map>
 
-class Parent : public QSerializer{
+class Parent : public QSerializer
+{
     Q_GADGET
     QS_SERIALIZABLE
-    public:
-    Parent(){ }
-    Parent(int age, const QString & name, bool isMale)
+
+public:
+    Parent() {}
+    Parent(int age, const QString &name, bool isMale)
         : age(age),
           name(name),
-          male(isMale) { }
+          male(isMale) {}
     QS_FIELD(int, age)
     QS_FIELD(QString, name)
     QS_FIELD(bool, male)
 };
 
-class Student : public QSerializer {
+class Student : public QSerializer
+{
     Q_GADGET
     QS_SERIALIZABLE
-    public:
+
+public:
     Student() {}
-    Student(int age, const QString & name, QStringList links, Parent mom, Parent dad)
+    Student(int age, const QString &name, QStringList links, Parent mom, Parent dad)
         : age(age),
           name(name),
           links(links)
@@ -37,7 +42,8 @@ class Student : public QSerializer {
     QS_COLLECTION_OBJECTS(QList, Parent, parents)
 };
 
-class Dictionaries : public QSerializer {
+class Dictionaries : public QSerializer
+{
     Q_GADGET
     QS_SERIALIZABLE
     QS_QT_DICT(QHash, QString, QString, qt_hash)
@@ -47,8 +53,8 @@ class Dictionaries : public QSerializer {
     QS_STL_DICT_OBJECTS(std::map, QString, Student, std_map_objects);
 };
 
-
-class Field : public QSerializer {
+class Field : public QSerializer
+{
     Q_GADGET
     QS_SERIALIZABLE
     QS_FIELD(int, digit)
@@ -57,8 +63,8 @@ class Field : public QSerializer {
     QS_FIELD(double, d_digit)
 };
 
-
-class Collection : public QSerializer{
+class Collection : public QSerializer
+{
     Q_GADGET
     QS_SERIALIZABLE
     QS_COLLECTION(QVector, int, vector)
@@ -66,23 +72,38 @@ class Collection : public QSerializer{
     QS_COLLECTION(QStack, double, stack)
 };
 
-
-class CustomObject : public QSerializer {
+class CustomObject : public QSerializer
+{
     Q_GADGET
     QS_SERIALIZABLE
     QS_FIELD(int, digit)
     QS_COLLECTION(QVector, QString, string)
 };
 
-
-class CollectionOfObjects : public QSerializer{
+class CollectionOfObjects : public QSerializer
+{
     Q_GADGET
     QS_SERIALIZABLE
     QS_COLLECTION_OBJECTS(QVector, CustomObject, objects)
 };
 
+class EmptyClass : public QSerializer
+{
+    Q_GADGET
+    QS_SERIALIZABLE
+    QS_FIELD(QString, str1)
+    QS_FIELD(QString, str2)
+    QS_FIELD(QString, str3)
+    QS_FIELD(QString, str4)
+    QS_FIELD(QString, str5)
+    QS_INTERNAL_MEMBER_SKIP_EMPTY_AND_NULL_LITERALS(str1)
+    QS_INTERNAL_MEMBER_SKIP_EMPTY_AND_NULL_LITERALS(str3)
+    QS_INTERNAL_MEMBER_SKIP_EMPTY_AND_NULL_LITERALS(str4)
+};
+QS_MEMBER_SKIP_EMPTY_AND_NULL_LITERALS(EmptyClass, str2)
 
-class General : public QSerializer{
+class General : public QSerializer
+{
     Q_GADGET
     QS_SERIALIZABLE
     QS_OBJECT(Field, field)
@@ -90,23 +111,24 @@ class General : public QSerializer{
     QS_OBJECT(CustomObject, object)
     QS_OBJECT(CollectionOfObjects, collectionObjects)
     QS_OBJECT(Dictionaries, dictionaries)
+    QS_OBJECT(EmptyClass, emptyClass)
 };
 
-class TestXmlObject : public QSerializer{
+class TestXmlObject : public QSerializer
+{
     Q_GADGET
     QS_SERIALIZABLE
     QS_FIELD(int, digit)
     QS_COLLECTION(QVector, QString, string)
 };
 
-class TestXml : public QSerializer{
+class TestXml : public QSerializer
+{
     Q_GADGET
     QS_SERIALIZABLE
     QS_FIELD(int, field)
     QS_COLLECTION(QVector, int, collection)
     QS_OBJECT(TestXmlObject, object)
 };
-
-
 
 #endif // CLASSES_H

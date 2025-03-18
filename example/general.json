@@ -178,5 +178,9 @@
             "second",
             "first"
         ]
+    },
+    "empty": {
+        "str4": "test",
+        "str5": "test"
     }
 }

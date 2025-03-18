@@ -1,11 +1,12 @@
-#include <QCoreApplication>
 #include "classes.h"
 
-#include <QFile>
+#include <QCoreApplication>
 #include <QDebug>
+#include <QFile>
 
 #ifdef QS_HAS_JSON
-void json_example() {
+void json_example()
+{
     qDebug() << "==================================== json_example ====================================";
     Student stud;
     stud.age = 23;
@@ -37,11 +38,12 @@ void json_example() {
 #endif
 
 #ifdef QS_HAS_XML
-void xml_example(){
+void xml_example()
+{
     qDebug() << "==================================== xml_example ====================================";
     TestXml src;
     src.field = 10;
-    for(int i = 0; i < src.field; i ++)
+    for (int i = 0; i < src.field; i++)
         src.collection.append(i);
     src.object.digit = 666;
     src.object.string.append("it's first note in string array");
@@ -60,7 +62,8 @@ void xml_example(){
 }
 #endif
 
-void serialize_to_file() {
+void serialize_to_file()
+{
     /* OBJECT */
     Field field;
     field.flag = false;
@@ -74,13 +77,12 @@ void serialize_to_file() {
     collection.list.append("first");
     collection.list.append("second");
     collection.list.append("third");
-    for(int i = 0; i < 6; i ++)
+    for (int i = 0; i < 6; i++)
         collection.vector.append(i);
     collection.stack.append(2.44);
     collection.stack.append(4.42);
     collection.stack.append(77);
     /*.........................................................................................................................*/
-
 
     /* OBJECT */
     CustomObject object;
@@ -90,48 +92,50 @@ void serialize_to_file() {
     object.string.append("first");
     /*.........................................................................................................................*/
 
-
     /* COLLECTION OF OBJECTS */
     CollectionOfObjects collectionObjects;
-    for(int i = 0; i < 5 ; i ++)
+    for (int i = 0; i < 5; i++)
     {
         CustomObject o;
         o.digit = i;
-        for(int k = 0; k < 5; k ++)
-            o.string.append(QString("so it's just index number in binary %1").arg(QString::number(k+i,2)));
+        for (int k = 0; k < 5; k++)
+            o.string.append(QString("so it's just index number in binary %1").arg(QString::number(k + i, 2)));
         collectionObjects.objects.append(o);
     }
     /*.........................................................................................................................*/
 
-
-
     /* DICTIONARIES */
     Dictionaries dict;
-    dict.std_map.insert(std::pair<int, QString>(1,"first"));
-    dict.std_map.insert(std::pair<int, QString>(2,"second"));
+    dict.std_map.insert(std::pair<int, QString>(1, "first"));
+    dict.std_map.insert(std::pair<int, QString>(2, "second"));
     dict.std_map_objects.insert(std::pair<QString, Student>("+7(909)001-00-00", Student(22,
-                                                                                "Ken",
-                                                                                QStringList("http://github.com/smurfomen"),
-                                                                                Parent(44, "Olga", false),
-                                                                                Parent(48, "Alex", true))));
+                                                                                        "Ken",
+                                                                                        QStringList("http://github.com/smurfomen"),
+                                                                                        Parent(44, "Olga", false),
+                                                                                        Parent(48, "Alex", true))));
     dict.std_map_objects.insert(std::pair<QString, Student>("+7(909)000-10-00", Student(21,
-                                                                                "Jane",
-                                                                                QStringList("http://somelink.com"),
-                                                                                Parent(38, "Elie", false),
-                                                                                Parent(48, "John", true))));
+                                                                                        "Jane",
+                                                                                        QStringList("http://somelink.com"),
+                                                                                        Parent(38, "Elie", false),
+                                                                                        Parent(48, "John", true))));
     // fill QMap<QString, Student>
     dict.qt_map_objects.insert("+7(909)000-01-00", Student(22,
-                                                    "Kate",
-                                                    QStringList("http://katelink.com"),
-                                                    Parent(44, "Marlin", false),
-                                                    Parent(48, "Jake", true)));
+                                                           "Kate",
+                                                           QStringList("http://katelink.com"),
+                                                           Parent(44, "Marlin", false),
+                                                           Parent(48, "Jake", true)));
     dict.qt_map_objects.insert("+7(909)100-00-10", Student(22,
-                                                    "Bob",
-                                                    QStringList("http://bobsite.com"),
-                                                    Parent(44, "Mary", false),
-                                                    Parent(48, "Koul", true)));
-    dict.qt_map.insert("ping","pong");
-    dict.qt_map.insert("abra","kadabra");
+                                                           "Bob",
+                                                           QStringList("http://bobsite.com"),
+                                                           Parent(44, "Mary", false),
+                                                           Parent(48, "Koul", true)));
+    dict.qt_map.insert("ping", "pong");
+    dict.qt_map.insert("abra", "kadabra");
+    /*.........................................................................................................................*/
+    EmptyClass empty;
+    empty.str3 = "null";
+    empty.str4 = "test";
+    empty.str5 = "test";
     /*.........................................................................................................................*/
 
     General general;
@@ -140,6 +144,7 @@ void serialize_to_file() {
     general.collection = collection;
     general.collectionObjects = collectionObjects;
     general.dictionaries = dict;
+    general.emptyClass = empty;
 
 #ifdef QS_HAS_JSON
     {
@@ -147,9 +152,9 @@ void serialize_to_file() {
         qDebug() << general.toRawJson().constData();
 
         QFile json("general.json");
-        if(json.exists())
+        if (json.exists())
             json.remove();
-        if(json.open(QIODevice::WriteOnly))
+        if (json.open(QIODevice::WriteOnly))
         {
             json.write(general.toRawJson());
             json.close();
@@ -164,9 +169,9 @@ void serialize_to_file() {
         qDebug() << general.toRawXml().constData();
 
         QFile xml("general.xml");
-        if(xml.exists())
+        if (xml.exists())
             xml.remove();
-        if(xml.open(QIODevice::WriteOnly))
+        if (xml.open(QIODevice::WriteOnly))
         {
             xml.write(general.toRawXml());
             xml.close();
@@ -180,16 +185,15 @@ void deserialize_from_file()
 {
 #ifdef QS_HAS_JSON
     {
-        QFile json ("general.json");
-        if(!json.exists())
+        QFile json("general.json");
+        if (!json.exists())
             qWarning() << "ERROR: general.json is not exist";
-        if(json.open(QIODevice::ReadOnly))
+        if (json.open(QIODevice::ReadOnly))
         {
             // empty object
             General general;
             qDebug() << "empty json object:";
             qDebug() << general.toRawJson().constData();
-
 
             general.fromJson(json.readAll());
             qDebug() << "serialized json object from file: general.json";
@@ -201,10 +205,10 @@ void deserialize_from_file()
 
 #ifdef QS_HAS_XML
     {
-        QFile xml ("general.xml");
-        if(!xml.exists())
+        QFile xml("general.xml");
+        if (!xml.exists())
             qWarning() << "ERROR: general.xml is not exist";
-        if(xml.open(QIODevice::ReadOnly))
+        if (xml.open(QIODevice::ReadOnly))
         {
             // empty object
             General general;
@@ -241,8 +245,5 @@ int main(int argc, char *argv[])
     deserialize_from_file();
     qDebug() << "=============================================================================";
 
-	return 0;
+    return 0;
 }
-
-
-
