@@ -139,6 +139,10 @@ void serialize_to_file()
     empty.str6 = std::nullopt;
     empty.strings = { "first", "second", "third" };
     /*.........................................................................................................................*/
+    Host host;
+    host.host.insert("baidu.com", "127.0.0.1");
+    host.host.insert("dns.google", QStringList{ "8.8.8.8", "8.8.4.4" });
+    /*.........................................................................................................................*/
 
     General general;
     general.field = field;
@@ -147,6 +151,7 @@ void serialize_to_file()
     general.collectionObjects = collectionObjects;
     general.dictionaries = dict;
     general.emptyClass = empty;
+    general.host = host;
 
 #ifdef QS_HAS_JSON
     {

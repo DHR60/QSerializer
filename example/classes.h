@@ -107,6 +107,46 @@ class EmptyClass : public QSerializer
 };
 QS_MEMBER_SKIP_EMPTY_AND_NULL_LITERALS(EmptyClass, str2)
 
+// {
+//   "hosts": {
+//     "baidu.com": "127.0.0.1",
+//     "dns.google": [
+//       "8.8.8.8",
+//       "8.8.4.4"
+//     ]
+//   }
+// }
+
+class Host : public QSerializer
+{
+    Q_GADGET
+    QS_SERIALIZABLE
+
+public:
+    QMap<QString, QVariant> host;
+    QJsonObject toJson() const override
+    {
+        auto json = this->QSerializer::toJson();
+        for (auto it = host.begin(); it != host.end(); ++it)
+        {
+            if (it.value().metaType().id() == QMetaType::QStringList)
+            {
+                QJsonArray arr;
+                for (auto &item : it.value().toStringList())
+                {
+                    arr.append(item);
+                }
+                json[it.key()] = arr;
+            }
+            else
+            {
+                json[it.key()] = it.value().toString();
+            }
+        }
+        return json;
+    }
+};
+
 class General : public QSerializer
 {
     Q_GADGET
@@ -117,6 +157,7 @@ class General : public QSerializer
     QS_OBJECT(CollectionOfObjects, collectionObjects)
     QS_OBJECT(Dictionaries, dictionaries)
     QS_OBJECT(EmptyClass, emptyClass)
+    QS_OBJECT(Host, host)
 };
 
 class TestXmlObject : public QSerializer

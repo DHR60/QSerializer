@@ -213,7 +213,7 @@ class QSerializer {
 
 #ifdef QS_HAS_JSON
   /*! \brief  Serialize all accessed JSON propertyes for this object. */
-  QJsonObject toJson() const {
+  virtual QJsonObject toJson() const {
     QJsonObject json;
 
     for (int i = 0; i < metaObject()->propertyCount(); i++) {
@@ -257,7 +257,7 @@ class QSerializer {
   QByteArray toRawJson() const { return toByteArray(toJson()); }
 
   /*! \brief  Deserialize all accessed XML propertyes for this object. */
-  void fromJson(const QJsonValue& val) {
+  virtual void fromJson(const QJsonValue& val) {
     if (val.isObject()) {
       QJsonObject json = val.toObject();
       QStringList keys = json.keys();
@@ -293,7 +293,7 @@ class QSerializer {
 
 #ifdef QS_HAS_XML
   /*! \brief  Serialize all accessed XML propertyes for this object. */
-  QDomNode toXml() const {
+  virtual QDomNode toXml() const {
     QDomDocument doc;
     QDomElement el = doc.createElement(metaObject()->className());
 
@@ -367,7 +367,7 @@ class QSerializer {
   QByteArray toRawXml() const { return toByteArray(toXml()); }
 
   /*! \brief  Deserialize all accessed XML propertyes for this object. */
-  void fromXml(const QDomNode& val) {
+  virtual void fromXml(const QDomNode& val) {
     QDomNode doc = val;
 
     auto n = doc.firstChildElement(metaObject()->className());
