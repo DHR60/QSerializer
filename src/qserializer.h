@@ -31,6 +31,7 @@
  * version modified by DHR60 to
  * add support skip empty values and null
  * fix QJsonDocument mode
+ * Support JSON/XML serialization for std::optional<T>
  */
 
 #ifndef QSERIALIZER_H
@@ -141,7 +142,8 @@ class QSerializer {
         }
       }
     }
-    return shouldSkipEmpty();  // 如果没有成员级别的设置，则使用类级别的设置
+    return shouldSkipEmpty();  // If there is no member-level setting, use the
+                               // class-level setting
   }
 
   bool shouldSkipMemberNull(const char* memberName) const {
@@ -230,7 +232,7 @@ class QSerializer {
       QJsonValue value =
           metaObject()->property(i).readOnGadget(this).toJsonValue();
 
-      // 使用成员级别的选项
+      // Use member-level options
       bool skipEmpty = shouldSkipMemberEmpty(propName);
       bool skipNull = shouldSkipMemberNull(propName);
       bool skipNullLiterals = shouldSkipMemberNullLiterals(propName);
@@ -311,7 +313,7 @@ class QSerializer {
       QDomNode nodeValue = QDomNode(
           metaObject()->property(i).readOnGadget(this).value<QDomNode>());
 
-      // 使用成员级别的选项
+      // Use member-level options
       bool skipEmpty = shouldSkipMemberEmpty(propName);
       bool skipNull = shouldSkipMemberNull(propName);
       bool skipNullLiterals = shouldSkipMemberNullLiterals(propName);
@@ -319,13 +321,14 @@ class QSerializer {
       bool isNullLiteral = false;
       bool isEmpty = false;
 
-      // 先检查节点是否为null
+      // First, check if the node is null
       if (nodeValue.isNull()) {
         isEmpty = true;
       }
-      // 然后检查是否为文档节点（QS_XML_FIELD 返回的是QDomDocument）
+      // Then, check if it is a document node (QS_XML_FIELD returns a
+      // QDomDocument)
       else if (nodeValue.isDocument()) {
-        QDomDocument doc = nodeValue.toDocument();  // 转换为QDomDocument
+        QDomDocument doc = nodeValue.toDocument();  // Convert to QDomDocument
         QDomElement rootElem = doc.documentElement();
         if (rootElem.hasChildNodes() && rootElem.firstChild().isText()) {
           QString textValue = rootElem.firstChild().nodeValue();
@@ -335,7 +338,7 @@ class QSerializer {
           isEmpty = !rootElem.hasChildNodes();
         }
       }
-      // 最后检查元素节点
+      // Finally, check if it is an element node
       else if (nodeValue.isElement()) {
         QDomElement elem = nodeValue.toElement();
         if (elem.hasChildNodes() && elem.firstChild().isText()) {
@@ -347,7 +350,7 @@ class QSerializer {
         }
       }
 
-      // 更完整的跳过条件检查
+      // More comprehensive skipping condition check
       if ((skipEmpty && isEmpty) || (skipNull && nodeValue.isNull()) ||
           (skipNullLiterals && isNullLiteral)) {
         continue;
@@ -421,8 +424,29 @@ class QSerializer {
   void SET(json, name)(const QJsonValue& varname) {                      \
     name = varname.toVariant().value<type>();                            \
   }
+#define QS_JSON_FIELD_OPT(type, name)                                        \
+  Q_PROPERTY(QJsonValue name READ GET(json, name) WRITE SET(json, name))     \
+ private:                                                                    \
+  QJsonValue GET(json, name)() const {                                       \
+    if (name.has_value()) {                                                  \
+      /* When optional has a value, use QVariant for conversion */           \
+      return QJsonValue::fromVariant(QVariant(name.value()));                \
+    } else {                                                                 \
+      /* When optional is empty, return null; whether to write it depends on \
+       * the skip null setting */                                            \
+      return QJsonValue(QJsonValue::Null);                                   \
+    }                                                                        \
+  }                                                                          \
+  void SET(json, name)(const QJsonValue& varname) {                          \
+    if (varname.isNull()) {                                                  \
+      name = std::nullopt;                                                   \
+    } else {                                                                 \
+      name = varname.toVariant().value<type>();                              \
+    }                                                                        \
+  }
 #else
 #define QS_JSON_FIELD(type, name)
+#define QS_JSON_FIELD_OPT(type, name)
 #endif
 
 /* Create XML property and methods for primitive type field*/
@@ -446,8 +470,42 @@ class QSerializer {
         name = QVariant(domElement.text()).value<type>();                 \
     }                                                                     \
   }
+#define QS_XML_FIELD_OPT(type, name)                                      \
+  Q_PROPERTY(QDomNode name READ GET(xml, name) WRITE SET(xml, name))      \
+ private:                                                                 \
+  QDomNode GET(xml, name)() const {                                       \
+    QDomDocument doc;                                                     \
+    QString strname = #name;                                              \
+    QDomElement element = doc.createElement(strname);                     \
+    if (name.has_value()) {                                               \
+      QDomText valueOfProp =                                              \
+          doc.createTextNode(QVariant(name.value()).toString());          \
+      element.appendChild(valueOfProp);                                   \
+    } else {                                                              \
+      /* Generate “null” text when optional field is null, subsequent \
+       * deserialization identifies as null */                            \
+      QDomText valueOfProp = doc.createTextNode("null");                  \
+      element.appendChild(valueOfProp);                                   \
+    }                                                                     \
+    doc.appendChild(element);                                             \
+    return QDomNode(doc);                                                 \
+  }                                                                       \
+  void SET(xml, name)(const QDomNode& node) {                             \
+    if (!node.isNull() && node.isElement()) {                             \
+      QDomElement domElement = node.toElement();                          \
+      if (domElement.tagName() == #name) {                                \
+        QString text = domElement.text();                                 \
+        if (text == "null") {                                             \
+          name = std::nullopt;                                            \
+        } else {                                                          \
+          name = QVariant(text).value<type>();                            \
+        }                                                                 \
+      }                                                                   \
+    }                                                                     \
+  }
 #else
 #define QS_XML_FIELD(type, name)
+#define QS_XML_FIELD_OPT(type, name)
 #endif
 
 /* Generate JSON-property and methods for primitive type objects */
@@ -963,6 +1021,11 @@ class QSerializer {
   QS_DECLARE_MEMBER(type, name) \
   QS_BIND_FIELD(type, name)
 
+#define QS_FIELD_OPT(type, name)               \
+  QS_DECLARE_MEMBER(std::optional<type>, name) \
+  QS_JSON_FIELD_OPT(type, name)                \
+  QS_XML_FIELD_OPT(type, name)
+
 /* CREATE AND BIND: */
 /* Make collection of primitive type objects [collectionType<itemType> name] and
  * generate serializable propertyes for this collection */
@@ -1057,11 +1120,13 @@ class QSerializer {
 #if __cplusplus >= 201703L || (defined(_MSVC_LANG) && _MSVC_LANG >= 201703L)
 #define QS_INTERNAL_SERIALIZE_OPTIONS(skipEmpty, skipNull, skipNullLiterals) \
  private:                                                                    \
-  static constexpr QSerializerOptions _classOptions = {skipEmpty, skipNull, skipNullLiterals}; \
+  static constexpr QSerializerOptions _classOptions = {skipEmpty, skipNull,  \
+                                                       skipNullLiterals};    \
   class OptionsInitializer {                                                 \
    public:                                                                   \
     OptionsInitializer() {                                                   \
-      QSerializer::setClassOptions(staticMetaObject.className(), _classOptions); \
+      QSerializer::setClassOptions(staticMetaObject.className(),             \
+                                   _classOptions);                           \
     }                                                                        \
   };                                                                         \
   inline static OptionsInitializer _optionsInitializer;
@@ -1086,16 +1151,16 @@ class QSerializer {
   OptionsInitializer _optionsInitializer;
 #endif
 
-#define QS_INTERNAL_SKIP_EMPTY() \
+#define QS_INTERNAL_SKIP_EMPTY \
   QS_INTERNAL_SERIALIZE_OPTIONS(true, false, false)
 
-#define QS_INTERNAL_SKIP_NULL() \
+#define QS_INTERNAL_SKIP_NULL \
   QS_INTERNAL_SERIALIZE_OPTIONS(false, true, false)
 
-#define QS_INTERNAL_SKIP_EMPTY_AND_NULL() \
+#define QS_INTERNAL_SKIP_EMPTY_AND_NULL \
   QS_INTERNAL_SERIALIZE_OPTIONS(true, true, false)
 
-#define QS_INTERNAL_SKIP_EMPTY_AND_NULL_LITERALS() \
+#define QS_INTERNAL_SKIP_EMPTY_AND_NULL_LITERALS \
   QS_INTERNAL_SERIALIZE_OPTIONS(true, true, true)
 
 /* Complete the definition of serialization properties in the implementation

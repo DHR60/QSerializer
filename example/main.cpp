@@ -136,6 +136,7 @@ void serialize_to_file()
     empty.str3 = "null";
     empty.str4 = "test";
     empty.str5 = "test";
+    empty.str6 = std::nullopt;
     /*.........................................................................................................................*/
 
     General general;

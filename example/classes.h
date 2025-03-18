@@ -91,13 +91,17 @@ class EmptyClass : public QSerializer
 {
     Q_GADGET
     QS_SERIALIZABLE
-    QS_INTERNAL_SKIP_EMPTY_AND_NULL_LITERALS()
     QS_FIELD(QString, str1)
     QS_FIELD(QString, str2)
     QS_FIELD(QString, str3)
     QS_FIELD(QString, str4)
     QS_FIELD(QString, str5)
+    QS_FIELD_OPT(QString, str6)
+    QS_INTERNAL_MEMBER_SKIP_EMPTY_AND_NULL_LITERALS(str1)
+    QS_INTERNAL_MEMBER_SKIP_EMPTY_AND_NULL_LITERALS(str3)
+    QS_INTERNAL_MEMBER_SKIP_EMPTY_AND_NULL_LITERALS(str4)
 };
+QS_MEMBER_SKIP_EMPTY_AND_NULL_LITERALS(EmptyClass, str2)
 
 class General : public QSerializer
 {
