@@ -444,9 +444,29 @@ class QSerializer {
       name = varname.toVariant().value<type>();                              \
     }                                                                        \
   }
+#define QS_JSON_OBJECT_OPT(type, name)                                  \
+  Q_PROPERTY(QJsonValue name READ GET(json, name) WRITE SET(json, name)) \
+ private:                                                               \
+  QJsonValue GET(json, name)() const {                                  \
+    if (name.has_value()) {                                             \
+      return name.value().toJson();                                     \
+    } else {                                                            \
+      return QJsonValue(QJsonValue::Null);                              \
+    }                                                                   \
+  }                                                                     \
+  void SET(json, name)(const QJsonValue& varname) {                     \
+    if (varname.isNull()) {                                             \
+      name = std::nullopt;                                              \
+    } else {                                                            \
+      type temp;                                                        \
+      temp.fromJson(varname);                                           \
+      name = temp;                                                      \
+    }                                                                   \
+  }
 #else
 #define QS_JSON_FIELD(type, name)
 #define QS_JSON_FIELD_OPT(type, name)
+#define QS_JSON_OBJECT_OPT(type, name)
 #endif
 
 /* Create XML property and methods for primitive type field*/
@@ -503,9 +523,36 @@ class QSerializer {
       }                                                                   \
     }                                                                     \
   }
+#define QS_XML_OBJECT_OPT(type, name)                                 \
+  Q_PROPERTY(QDomNode name READ GET(xml, name) WRITE SET(xml, name))   \
+ private:                                                              \
+  QDomNode GET(xml, name)() const {                                    \
+    if (name.has_value()) {                                            \
+      return name.value().toXml();                                     \
+    } else {                                                           \
+      QDomDocument doc;                                                \
+      QDomElement element = doc.createElement(#name);                  \
+      element.appendChild(doc.createTextNode("null"));                 \
+      doc.appendChild(element);                                        \
+      return QDomNode(doc);                                            \
+    }                                                                  \
+  }                                                                    \
+  void SET(xml, name)(const QDomNode& node) {                          \
+    if (!node.isNull() && node.isElement()) {                          \
+      QDomElement domElement = node.toElement();                       \
+      if (domElement.text() == "null") {                               \
+        name = std::nullopt;                                           \
+      } else {                                                         \
+        type temp;                                                     \
+        temp.fromXml(node);                                            \
+        name = temp;                                                   \
+      }                                                                \
+    }                                                                  \
+  }
 #else
 #define QS_XML_FIELD(type, name)
 #define QS_XML_FIELD_OPT(type, name)
+#define QS_XML_OBJECT_OPT(type, name)
 #endif
 
 /* Generate JSON-property and methods for primitive type objects */
@@ -1041,6 +1088,11 @@ class QSerializer {
 #define QS_OBJECT(type, name)   \
   QS_DECLARE_MEMBER(type, name) \
   QS_BIND_OBJECT(type, name)
+
+#define QS_OBJECT_OPT(type, name)          \
+  QS_DECLARE_MEMBER(std::optional<type>, name) \
+  QS_JSON_OBJECT_OPT(type, name)           \
+  QS_XML_OBJECT_OPT(type, name)
 
 /* CREATE AND BIND: */
 /* Make collection of custom class objects [collectionType<itemType> name] and
