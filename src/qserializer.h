@@ -80,7 +80,7 @@ Q_DECLARE_METATYPE(QDomElement)
 
 // enable QJsonDocument::Indented for readability, QJsonDocument::Compact for
 // performance
-#define QS_JSON_DOC_MODE QJsonDocument::Compact  // QJsonDocument::Indented
+#define QS_JSON_DOC_MODE QJsonDocument::Indented  // QJsonDocument::Compact
 
 struct QSerializerOptions {
   bool skipEmpty = false;
