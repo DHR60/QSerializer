@@ -1055,22 +1055,17 @@ class QSerializer {
   QS_SERIALIZE_OPTIONS(className, true, true, true)
 
 #if __cplusplus >= 201703L || (defined(_MSVC_LANG) && _MSVC_LANG >= 201703L)
-// C++17 or later - use inline static
 #define QS_INTERNAL_SERIALIZE_OPTIONS(skipEmpty, skipNull, skipNullLiterals) \
  private:                                                                    \
+  static constexpr QSerializerOptions _classOptions = {skipEmpty, skipNull, skipNullLiterals}; \
   class OptionsInitializer {                                                 \
    public:                                                                   \
     OptionsInitializer() {                                                   \
-      QSerializerOptions opts;                                               \
-      opts.skipEmpty = skipEmpty;                                            \
-      opts.skipNull = skipNull;                                              \
-      opts.skipNullLiterals = skipNullLiterals;                              \
-      QSerializer::setClassOptions(metaObject()->className(), opts);         \
+      QSerializer::setClassOptions(staticMetaObject.className(), _classOptions); \
     }                                                                        \
   };                                                                         \
-  inline static OptionsInitializer _optionsInitializer = OptionsInitializer();
+  inline static OptionsInitializer _optionsInitializer;
 #else
-// C++14 or earlier - use static member
 #define QS_INTERNAL_SERIALIZE_OPTIONS(skipEmpty, skipNull, skipNullLiterals) \
  private:                                                                    \
   static void _initializeOptions() {                                         \
