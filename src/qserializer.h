@@ -289,6 +289,22 @@ class QSerializer {
   void fromJson(const QByteArray& data) {
     fromJson(QJsonDocument::fromJson(data).object());
   }
+
+  /*! \brief  Create and deserialize an object of type T from JSON. */
+  template <typename T>
+  static T fromJson(const QJsonValue& val) {
+    T obj;
+    obj.fromJson(val);
+    return obj;
+  }
+
+  /*! \brief  Create and deserialize an object of type T from JSON byte array. */
+  template <typename T>
+  static T fromJson(const QByteArray& data) {
+    T obj;
+    obj.fromJson(data);
+    return obj;
+  }
 #endif  // QS_HAS_JSON
 
 #ifdef QS_HAS_XML
@@ -400,6 +416,22 @@ class QSerializer {
     QDomDocument d;
     d.setContent(data);
     fromXml(d);
+  }
+
+  /*! \brief  Create and deserialize an object of type T from XML. */
+  template <typename T>
+  static T fromXml(const QDomNode& val) {
+    T obj;
+    obj.fromXml(val);
+    return obj;
+  }
+
+  /*! \brief  Create and deserialize an object of type T from XML byte array. */
+  template <typename T>
+  static T fromXml(const QByteArray& data) {
+    T obj;
+    obj.fromXml(data);
+    return obj;
   }
 #endif  // QS_HAS_XML
 };
