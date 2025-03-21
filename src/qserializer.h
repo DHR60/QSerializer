@@ -412,6 +412,10 @@ class QSerializer {
  public:                              \
   type name = type();
 
+#define QS_DECLARE_MEMBER_DEFAULT(type, name, default_value) \
+  public:                                                     \
+   type name = default_value;
+
 /* Create JSON property and methods for primitive type field*/
 #ifdef QS_HAS_JSON
 #define QS_JSON_FIELD(type, name)                                        \
@@ -1013,6 +1017,10 @@ class QSerializer {
   QS_JSON_FIELD(type, name)       \
   QS_XML_FIELD(type, name)
 
+#define QS_BIND_FIELD_OPT(type, name) \
+  QS_JSON_FIELD_OPT(type, name)       \
+  QS_XML_FIELD_OPT(type, name)
+
 /* BIND: */
 /* generate serializable propertyes JSON and XML for collection of primitive
  * type fields */
@@ -1025,6 +1033,10 @@ class QSerializer {
 #define QS_BIND_OBJECT(type, name) \
   QS_JSON_OBJECT(type, name)       \
   QS_XML_OBJECT(type, name)
+
+#define QS_BIND_OBJECT_OPT(type, name) \
+  QS_JSON_OBJECT_OPT(type, name)       \
+  QS_XML_OBJECT_OPT(type, name)
 
 /* BIND: */
 /* generate serializable propertyes JSON and XML for collection of custom type
@@ -1070,8 +1082,11 @@ class QSerializer {
 
 #define QS_FIELD_OPT(type, name)               \
   QS_DECLARE_MEMBER(std::optional<type>, name) \
-  QS_JSON_FIELD_OPT(type, name)                \
-  QS_XML_FIELD_OPT(type, name)
+  QS_BIND_FIELD_OPT(type, name)
+
+#define QS_FIELD_DEFAULT(type, name, default_value) \
+  QS_DECLARE_MEMBER_DEFAULT(type, name, default_value) \
+  QS_BIND_FIELD(type, name)
 
 /* CREATE AND BIND: */
 /* Make collection of primitive type objects [collectionType<itemType> name] and
@@ -1091,8 +1106,11 @@ class QSerializer {
 
 #define QS_OBJECT_OPT(type, name)          \
   QS_DECLARE_MEMBER(std::optional<type>, name) \
-  QS_JSON_OBJECT_OPT(type, name)           \
-  QS_XML_OBJECT_OPT(type, name)
+  QS_BIND_OBJECT_OPT(type, name)
+
+#define QS_OBJECT_DEFAULT(type, name, default_value) \
+  QS_DECLARE_MEMBER_DEFAULT(type, name, default_value) \
+  QS_BIND_OBJECT(type, name)
 
 /* CREATE AND BIND: */
 /* Make collection of custom class objects [collectionType<itemType> name] and

@@ -94,7 +94,7 @@ class EmptyClass : public QSerializer
     QS_FIELD(QString, str1)
     QS_FIELD(QString, str2)
     QS_FIELD(QString, str3)
-    QS_FIELD(QString, str4)
+    QS_FIELD_DEFAULT(QString, str4, "test")
     QS_FIELD(QString, str5)
     QS_FIELD_OPT(QString, str6)
     QS_COLLECTION(QVector, QString, strings)

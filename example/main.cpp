@@ -108,40 +108,23 @@ void serialize_to_file()
     Dictionaries dict;
     dict.std_map.insert(std::pair<int, QString>(1, "first"));
     dict.std_map.insert(std::pair<int, QString>(2, "second"));
-    dict.std_map_objects.insert(std::pair<QString, Student>("+7(909)001-00-00", Student(22,
-                                                                                        "Ken",
-                                                                                        QStringList("http://github.com/smurfomen"),
-                                                                                        Parent(44, "Olga", false),
-                                                                                        Parent(48, "Alex", true))));
-    dict.std_map_objects.insert(std::pair<QString, Student>("+7(909)000-10-00", Student(21,
-                                                                                        "Jane",
-                                                                                        QStringList("http://somelink.com"),
-                                                                                        Parent(38, "Elie", false),
-                                                                                        Parent(48, "John", true))));
+    dict.std_map_objects.insert(std::pair<QString, Student>("+7(909)001-00-00", Student(22, "Ken", QStringList("http://github.com/smurfomen"), Parent(44, "Olga", false), Parent(48, "Alex", true))));
+    dict.std_map_objects.insert(std::pair<QString, Student>("+7(909)000-10-00", Student(21, "Jane", QStringList("http://somelink.com"), Parent(38, "Elie", false), Parent(48, "John", true))));
     // fill QMap<QString, Student>
-    dict.qt_map_objects.insert("+7(909)000-01-00", Student(22,
-                                                           "Kate",
-                                                           QStringList("http://katelink.com"),
-                                                           Parent(44, "Marlin", false),
-                                                           Parent(48, "Jake", true)));
-    dict.qt_map_objects.insert("+7(909)100-00-10", Student(22,
-                                                           "Bob",
-                                                           QStringList("http://bobsite.com"),
-                                                           Parent(44, "Mary", false),
-                                                           Parent(48, "Koul", true)));
+    dict.qt_map_objects.insert("+7(909)000-01-00", Student(22, "Kate", QStringList("http://katelink.com"), Parent(44, "Marlin", false), Parent(48, "Jake", true)));
+    dict.qt_map_objects.insert("+7(909)100-00-10", Student(22, "Bob", QStringList("http://bobsite.com"), Parent(44, "Mary", false), Parent(48, "Koul", true)));
     dict.qt_map.insert("ping", "pong");
     dict.qt_map.insert("abra", "kadabra");
     /*.........................................................................................................................*/
     EmptyClass empty;
     empty.str3 = "null";
-    empty.str4 = "test";
     empty.str5 = "test";
     empty.str6 = std::nullopt;
-    empty.strings = { "first", "second", "third" };
+    empty.strings = {"first", "second", "third"};
     /*.........................................................................................................................*/
     Host host;
     host.host.insert("baidu.com", "127.0.0.1");
-    host.host.insert("dns.google", QStringList{ "8.8.8.8", "8.8.4.4" });
+    host.host.insert("dns.google", QStringList {"8.8.8.8", "8.8.4.4"});
     /*.........................................................................................................................*/
 
     General general;
