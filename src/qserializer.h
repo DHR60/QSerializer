@@ -615,9 +615,9 @@ class QSerializer {
     if (!varname.isArray()) return;                                      \
     name.clear();                                                        \
     QJsonArray val = varname.toArray();                                  \
-    for (const auto& item : val) {                                       \
+    for (int i = 0; i < val.size(); i++) {                               \
       itemType tmp;                                                      \
-      tmp = item.toVariant().value<itemType>();                          \
+      tmp = val.at(i).toVariant().value<itemType>();                     \
       name.append(tmp);                                                  \
     }                                                                    \
   }
@@ -945,7 +945,7 @@ class QSerializer {
     QDomDocument doc;                                                \
     QDomElement element = doc.createElement(#name);                  \
     element.setAttribute("type", "map");                             \
-    for (auto p : name) {                                            \
+    for (const auto& p : name) {                                     \
       QDomElement e = doc.createElement("item");                     \
       e.setAttribute("key", QVariant(p.first).toString());           \
       e.setAttribute("value", QVariant(p.second).toString());        \
@@ -987,7 +987,7 @@ class QSerializer {
  private:                                                                     \
   QJsonValue GET(json, name)() const {                                        \
     QJsonObject val;                                                          \
-    for (auto p : name) {                                                     \
+    for (const auto& p : name) {                                              \
       val.insert(QVariant::fromValue(p.first).toString(), p.second.toJson()); \
     }                                                                         \
     return val;                                                               \
@@ -1020,7 +1020,7 @@ class QSerializer {
     QDomDocument doc;                                                \
     QDomElement element = doc.createElement(#name);                  \
     element.setAttribute("type", "map");                             \
-    for (auto p : name) {                                            \
+    for (const auto& p : name) {                                     \
       QDomElement e = doc.createElement("item");                     \
       e.setAttribute("key", QVariant(p.first).toString());           \
       e.appendChild(p.second.toXml());                               \
