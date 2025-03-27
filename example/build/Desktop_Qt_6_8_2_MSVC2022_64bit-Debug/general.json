@@ -1,0 +1,199 @@
+{
+    "collection": {
+        "list": [
+            "first",
+            "second",
+            "third"
+        ],
+        "stack": [
+            2.44,
+            4.42,
+            77
+        ],
+        "vector": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5
+        ]
+    },
+    "collectionObjects": {
+        "objects": [
+            {
+                "digit": 0,
+                "string": [
+                    "so it's just index number in binary 0",
+                    "so it's just index number in binary 1",
+                    "so it's just index number in binary 10",
+                    "so it's just index number in binary 11",
+                    "so it's just index number in binary 100"
+                ]
+            },
+            {
+                "digit": 1,
+                "string": [
+                    "so it's just index number in binary 1",
+                    "so it's just index number in binary 10",
+                    "so it's just index number in binary 11",
+                    "so it's just index number in binary 100",
+                    "so it's just index number in binary 101"
+                ]
+            },
+            {
+                "digit": 2,
+                "string": [
+                    "so it's just index number in binary 10",
+                    "so it's just index number in binary 11",
+                    "so it's just index number in binary 100",
+                    "so it's just index number in binary 101",
+                    "so it's just index number in binary 110"
+                ]
+            },
+            {
+                "digit": 3,
+                "string": [
+                    "so it's just index number in binary 11",
+                    "so it's just index number in binary 100",
+                    "so it's just index number in binary 101",
+                    "so it's just index number in binary 110",
+                    "so it's just index number in binary 111"
+                ]
+            },
+            {
+                "digit": 4,
+                "string": [
+                    "so it's just index number in binary 100",
+                    "so it's just index number in binary 101",
+                    "so it's just index number in binary 110",
+                    "so it's just index number in binary 111",
+                    "so it's just index number in binary 1000"
+                ]
+            }
+        ]
+    },
+    "dictionaries": {
+        "qt_hash": {
+        },
+        "qt_map": {
+            "abra": "kadabra",
+            "ping": "pong"
+        },
+        "qt_map_objects": {
+            "+7(909)000-01-00": {
+                "age": 22,
+                "links": [
+                    "http://katelink.com"
+                ],
+                "name": "Kate",
+                "parents": [
+                    {
+                        "age": 44,
+                        "male": false,
+                        "name": "Marlin"
+                    },
+                    {
+                        "age": 48,
+                        "male": true,
+                        "name": "Jake"
+                    }
+                ]
+            },
+            "+7(909)100-00-10": {
+                "age": 22,
+                "links": [
+                    "http://bobsite.com"
+                ],
+                "name": "Bob",
+                "parents": [
+                    {
+                        "age": 44,
+                        "male": false,
+                        "name": "Mary"
+                    },
+                    {
+                        "age": 48,
+                        "male": true,
+                        "name": "Koul"
+                    }
+                ]
+            }
+        },
+        "std_map": {
+            "1": "first",
+            "2": "second"
+        },
+        "std_map_objects": {
+            "+7(909)000-10-00": {
+                "age": 21,
+                "links": [
+                    "http://somelink.com"
+                ],
+                "name": "Jane",
+                "parents": [
+                    {
+                        "age": 38,
+                        "male": false,
+                        "name": "Elie"
+                    },
+                    {
+                        "age": 48,
+                        "male": true,
+                        "name": "John"
+                    }
+                ]
+            },
+            "+7(909)001-00-00": {
+                "age": 22,
+                "links": [
+                    "http://github.com/smurfomen"
+                ],
+                "name": "Ken",
+                "parents": [
+                    {
+                        "age": 44,
+                        "male": false,
+                        "name": "Olga"
+                    },
+                    {
+                        "age": 48,
+                        "male": true,
+                        "name": "Alex"
+                    }
+                ]
+            }
+        }
+    },
+    "emptyClass": {
+        "str4": "test",
+        "str5": "test",
+        "str6": null,
+        "strings": [
+            "first",
+            "second",
+            "third"
+        ]
+    },
+    "field": {
+        "d_digit": 88.99,
+        "digit": 34,
+        "flag": false,
+        "string": "some string"
+    },
+    "host": {
+        "baidu.com": "127.0.0.1",
+        "dns.google": [
+            "8.8.8.8",
+            "8.8.4.4"
+        ]
+    },
+    "object": {
+        "digit": 8,
+        "string": [
+            "third",
+            "second",
+            "first"
+        ]
+    }
+}

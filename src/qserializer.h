@@ -32,6 +32,7 @@
  * add support skip empty values and null
  * fix QJsonDocument mode
  * Support JSON/XML serialization for std::optional<T>
+ * Optimize Code
  */
 
 #ifndef QSERIALIZER_H
@@ -82,50 +83,48 @@ Q_DECLARE_METATYPE(QDomElement)
 // performance
 #define QS_JSON_DOC_MODE QJsonDocument::Indented  // QJsonDocument::Compact
 
-struct QSerializerOptions {
-  bool skipEmpty = false;
-  bool skipNull = false;
-  bool skipNullLiterals = false;
-};
-
-typedef std::map<std::string, QSerializerOptions> QSerializerOptionsMap;
-
-struct QSerializerMemberOptions {
-  bool skipEmpty = false;
-  bool skipNull = false;
-  bool skipNullLiterals = false;
-  std::string memberName;
-};
-
-typedef std::map<std::string, std::vector<QSerializerMemberOptions>>
-    QSerializerMemberOptionsMap;
-
 class QSerializer {
   Q_GADGET
   QS_SERIALIZABLE
  public:
+  struct Options {
+    bool skipEmpty = false;
+    bool skipNull = false;
+    bool skipNullLiterals = false;
+  };
+
+  struct MemberOptions {
+    bool skipEmpty = false;
+    bool skipNull = false;
+    bool skipNullLiterals = false;
+    std::string memberName;
+  };
+
+  typedef std::map<std::string, Options> OptionsMap;
+  typedef std::map<std::string, std::vector<MemberOptions>> MemberOptionsMap;
+
   virtual ~QSerializer() = default;
 
-  static QSerializerOptionsMap s_classOptions;
-  static QSerializerMemberOptionsMap s_memberOptions;
+  static OptionsMap s_classOptions;
+  static MemberOptionsMap s_memberOptions;
 
   static void setClassOptions(const std::string& className,
-                              const QSerializerOptions& options) {
+                              const Options& options) {
     s_classOptions[className] = options;
   }
 
-  static QSerializerOptions getClassOptions(const std::string& className) {
+  static Options getClassOptions(const std::string& className) {
     auto it = s_classOptions.find(className);
     if (it != s_classOptions.end()) {
       return it->second;
     }
-    return QSerializerOptions();
+    return Options();
   }
 
   static void setMemberOptions(const std::string& className,
                                const std::string& memberName, bool skipEmpty,
                                bool skipNull, bool skipNullLiterals) {
-    QSerializerMemberOptions opts;
+    MemberOptions opts;
     opts.skipEmpty = skipEmpty;
     opts.skipNull = skipNull;
     opts.skipNullLiterals = skipNullLiterals;
@@ -298,7 +297,8 @@ class QSerializer {
     return obj;
   }
 
-  /*! \brief  Create and deserialize an object of type T from JSON byte array. */
+  /*! \brief  Create and deserialize an object of type T from JSON byte array.
+   */
   template <typename T>
   static T fromJson(const QByteArray& data) {
     T obj;
@@ -445,8 +445,8 @@ class QSerializer {
   type name = type();
 
 #define QS_DECLARE_MEMBER_DEFAULT(type, name, default_value) \
-  public:                                                     \
-   type name = default_value;
+ public:                                                     \
+  type name = default_value;
 
 /* Create JSON property and methods for primitive type field*/
 #ifdef QS_HAS_JSON
@@ -480,24 +480,24 @@ class QSerializer {
       name = varname.toVariant().value<type>();                              \
     }                                                                        \
   }
-#define QS_JSON_OBJECT_OPT(type, name)                                  \
+#define QS_JSON_OBJECT_OPT(type, name)                                   \
   Q_PROPERTY(QJsonValue name READ GET(json, name) WRITE SET(json, name)) \
- private:                                                               \
-  QJsonValue GET(json, name)() const {                                  \
-    if (name.has_value()) {                                             \
-      return name.value().toJson();                                     \
-    } else {                                                            \
-      return QJsonValue(QJsonValue::Null);                              \
-    }                                                                   \
-  }                                                                     \
-  void SET(json, name)(const QJsonValue& varname) {                     \
-    if (varname.isNull()) {                                             \
-      name = std::nullopt;                                              \
-    } else {                                                            \
-      type temp;                                                        \
-      temp.fromJson(varname);                                           \
-      name = temp;                                                      \
-    }                                                                   \
+ private:                                                                \
+  QJsonValue GET(json, name)() const {                                   \
+    if (name.has_value()) {                                              \
+      return name.value().toJson();                                      \
+    } else {                                                             \
+      return QJsonValue(QJsonValue::Null);                               \
+    }                                                                    \
+  }                                                                      \
+  void SET(json, name)(const QJsonValue& varname) {                      \
+    if (varname.isNull()) {                                              \
+      name = std::nullopt;                                               \
+    } else {                                                             \
+      type temp;                                                         \
+      temp.fromJson(varname);                                            \
+      name = temp;                                                       \
+    }                                                                    \
   }
 #else
 #define QS_JSON_FIELD(type, name)
@@ -559,31 +559,31 @@ class QSerializer {
       }                                                                   \
     }                                                                     \
   }
-#define QS_XML_OBJECT_OPT(type, name)                                 \
-  Q_PROPERTY(QDomNode name READ GET(xml, name) WRITE SET(xml, name))   \
- private:                                                              \
-  QDomNode GET(xml, name)() const {                                    \
-    if (name.has_value()) {                                            \
-      return name.value().toXml();                                     \
-    } else {                                                           \
-      QDomDocument doc;                                                \
-      QDomElement element = doc.createElement(#name);                  \
-      element.appendChild(doc.createTextNode("null"));                 \
-      doc.appendChild(element);                                        \
-      return QDomNode(doc);                                            \
-    }                                                                  \
-  }                                                                    \
-  void SET(xml, name)(const QDomNode& node) {                          \
-    if (!node.isNull() && node.isElement()) {                          \
-      QDomElement domElement = node.toElement();                       \
-      if (domElement.text() == "null") {                               \
-        name = std::nullopt;                                           \
-      } else {                                                         \
-        type temp;                                                     \
-        temp.fromXml(node);                                            \
-        name = temp;                                                   \
-      }                                                                \
-    }                                                                  \
+#define QS_XML_OBJECT_OPT(type, name)                                \
+  Q_PROPERTY(QDomNode name READ GET(xml, name) WRITE SET(xml, name)) \
+ private:                                                            \
+  QDomNode GET(xml, name)() const {                                  \
+    if (name.has_value()) {                                          \
+      return name.value().toXml();                                   \
+    } else {                                                         \
+      QDomDocument doc;                                              \
+      QDomElement element = doc.createElement(#name);                \
+      element.appendChild(doc.createTextNode("null"));               \
+      doc.appendChild(element);                                      \
+      return QDomNode(doc);                                          \
+    }                                                                \
+  }                                                                  \
+  void SET(xml, name)(const QDomNode& node) {                        \
+    if (!node.isNull() && node.isElement()) {                        \
+      QDomElement domElement = node.toElement();                     \
+      if (domElement.text() == "null") {                             \
+        name = std::nullopt;                                         \
+      } else {                                                       \
+        type temp;                                                   \
+        temp.fromXml(node);                                          \
+        name = temp;                                                 \
+      }                                                              \
+    }                                                                \
   }
 #else
 #define QS_XML_FIELD(type, name)
@@ -607,7 +607,7 @@ class QSerializer {
     if (!varname.isArray()) return;                                      \
     name.clear();                                                        \
     QJsonArray val = varname.toArray();                                  \
-    for (auto item : val) {                                              \
+    for (const auto& item : val) {                                       \
       itemType tmp;                                                      \
       tmp = item.toVariant().value<itemType>();                          \
       name.append(tmp);                                                  \
@@ -910,7 +910,7 @@ class QSerializer {
  private:                                                                \
   QJsonValue GET(json, name)() const {                                   \
     QJsonObject val;                                                     \
-    for (auto p : name) {                                                \
+    for (const auto& p : name) {                                         \
       val.insert(QVariant::fromValue(p.first).toString(),                \
                  QJsonValue::fromVariant(QVariant(p.second)));           \
     }                                                                    \
@@ -1116,7 +1116,7 @@ class QSerializer {
   QS_DECLARE_MEMBER(std::optional<type>, name) \
   QS_BIND_FIELD_OPT(type, name)
 
-#define QS_FIELD_DEFAULT(type, name, default_value) \
+#define QS_FIELD_DEFAULT(type, name, default_value)    \
   QS_DECLARE_MEMBER_DEFAULT(type, name, default_value) \
   QS_BIND_FIELD(type, name)
 
@@ -1136,11 +1136,11 @@ class QSerializer {
   QS_DECLARE_MEMBER(type, name) \
   QS_BIND_OBJECT(type, name)
 
-#define QS_OBJECT_OPT(type, name)          \
+#define QS_OBJECT_OPT(type, name)              \
   QS_DECLARE_MEMBER(std::optional<type>, name) \
   QS_BIND_OBJECT_OPT(type, name)
 
-#define QS_OBJECT_DEFAULT(type, name, default_value) \
+#define QS_OBJECT_DEFAULT(type, name, default_value)   \
   QS_DECLARE_MEMBER_DEFAULT(type, name, default_value) \
   QS_BIND_OBJECT(type, name)
 
@@ -1197,7 +1197,7 @@ class QSerializer {
   namespace {                                                                  \
   struct className##_options_initializer {                                     \
     className##_options_initializer() {                                        \
-      QSerializerOptions opts;                                                 \
+      QSerializer::Options opts;                                               \
       opts.skipEmpty = skipEmpty;                                              \
       opts.skipNull = skipNull;                                                \
       opts.skipNullLiterals = skipNullLiterals;                                \
@@ -1220,17 +1220,17 @@ class QSerializer {
   QS_SERIALIZE_OPTIONS(className, true, true, true)
 
 #if __cplusplus >= 201703L || (defined(_MSVC_LANG) && _MSVC_LANG >= 201703L)
-#define QS_INTERNAL_SERIALIZE_OPTIONS(skipEmpty, skipNull, skipNullLiterals) \
- private:                                                                    \
-  static constexpr QSerializerOptions _classOptions = {skipEmpty, skipNull,  \
-                                                       skipNullLiterals};    \
-  class OptionsInitializer {                                                 \
-   public:                                                                   \
-    OptionsInitializer() {                                                   \
-      QSerializer::setClassOptions(staticMetaObject.className(),             \
-                                   _classOptions);                           \
-    }                                                                        \
-  };                                                                         \
+#define QS_INTERNAL_SERIALIZE_OPTIONS(skipEmpty, skipNull, skipNullLiterals)  \
+ private:                                                                     \
+  static constexpr QSerializer::Options _classOptions = {skipEmpty, skipNull, \
+                                                         skipNullLiterals};   \
+  class OptionsInitializer {                                                  \
+   public:                                                                    \
+    OptionsInitializer() {                                                    \
+      QSerializer::setClassOptions(staticMetaObject.className(),              \
+                                   _classOptions);                            \
+    }                                                                         \
+  };                                                                          \
   inline static OptionsInitializer _optionsInitializer;
 #else
 #define QS_INTERNAL_SERIALIZE_OPTIONS(skipEmpty, skipNull, skipNullLiterals) \
@@ -1238,7 +1238,7 @@ class QSerializer {
   static void _initializeOptions() {                                         \
     static bool initialized = false;                                         \
     if (!initialized) {                                                      \
-      QSerializerOptions opts;                                               \
+      QSerializer::Options opts;                                             \
       opts.skipEmpty = skipEmpty;                                            \
       opts.skipNull = skipNull;                                              \
       opts.skipNullLiterals = skipNullLiterals;                              \
@@ -1253,11 +1253,9 @@ class QSerializer {
   OptionsInitializer _optionsInitializer;
 #endif
 
-#define QS_INTERNAL_SKIP_EMPTY \
-  QS_INTERNAL_SERIALIZE_OPTIONS(true, false, false)
+#define QS_INTERNAL_SKIP_EMPTY QS_INTERNAL_SERIALIZE_OPTIONS(true, false, false)
 
-#define QS_INTERNAL_SKIP_NULL \
-  QS_INTERNAL_SERIALIZE_OPTIONS(false, true, false)
+#define QS_INTERNAL_SKIP_NULL QS_INTERNAL_SERIALIZE_OPTIONS(false, true, false)
 
 #define QS_INTERNAL_SKIP_EMPTY_AND_NULL \
   QS_INTERNAL_SERIALIZE_OPTIONS(true, true, false)
@@ -1367,12 +1365,12 @@ class QSerializer {
 // Use conditional compilation to ensure that it is defined only once
 #if __cplusplus >= 201703L || (defined(_MSVC_LANG) && _MSVC_LANG >= 201703L)
 // C++17 or later - use inline static
-inline QSerializerOptionsMap QSerializer::s_classOptions;
-inline QSerializerMemberOptionsMap QSerializer::s_memberOptions;
+inline QSerializer::OptionsMap QSerializer::s_classOptions;
+inline QSerializer::MemberOptionsMap QSerializer::s_memberOptions;
 #else
 // C++14 or earlier - use static member
-QSerializerOptionsMap QSerializer::s_classOptions;
-QSerializerMemberOptionsMap QSerializer::s_memberOptions;
+QSerializer::OptionsMap QSerializer::s_classOptions;
+QSerializer::MemberOptionsMap QSerializer::s_memberOptions;
 #endif
 
 #endif  // QSERIALIZER_IMPLEMENTATION
