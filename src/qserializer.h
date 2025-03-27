@@ -61,18 +61,26 @@
 
 #define QS_VERSION "1.2.3"
 
-/* Generate metaObject method */
-#define QS_META_OBJECT_METHOD                     \
-  virtual const QMetaObject* metaObject() const { \
-    return &this->staticMetaObject;               \
+/* Base class metaObject method implementation */
+#define QS_BASE_META_OBJECT_METHOD                 \
+  virtual const QMetaObject* metaObject() const {  \
+    return &this->staticMetaObject;                \
+  }
+
+/* Derived class metaObject method implementation with override */
+#define QS_DERIVED_META_OBJECT_METHOD                    \
+  virtual const QMetaObject* metaObject() const override {\
+    return &this->staticMetaObject;                      \
   }
 
 #define QSERIALIZABLE \
   Q_GADGET            \
-  QS_META_OBJECT_METHOD
+  QS_SERIALIZABLE
 
 /* Mark class as serializable */
-#define QS_SERIALIZABLE QS_META_OBJECT_METHOD
+#define QS_SERIALIZABLE QS_DERIVED_META_OBJECT_METHOD
+
+#define QS_BASE_SERIALIZABLE QS_BASE_META_OBJECT_METHOD
 
 #ifdef QS_HAS_XML
 Q_DECLARE_METATYPE(QDomNode)
@@ -85,7 +93,7 @@ Q_DECLARE_METATYPE(QDomElement)
 
 class QSerializer {
   Q_GADGET
-  QS_SERIALIZABLE
+  QS_BASE_SERIALIZABLE
  public:
   struct Options {
     bool skipEmpty = false;
