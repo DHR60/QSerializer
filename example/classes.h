@@ -102,7 +102,7 @@ class EmptyClass : public QSerializer
     QS_INTERNAL_MEMBER_SKIP_EMPTY_AND_NULL_LITERALS(str1)
     QS_INTERNAL_MEMBER_SKIP_EMPTY_AND_NULL_LITERALS(str3)
     QS_INTERNAL_MEMBER_SKIP_EMPTY_AND_NULL_LITERALS(str4)
-    QS_INTERNAL_MEMBER_SKIP_EMPTY_AND_NULL_LITERALS(string)
+    QS_INTERNAL_MEMBER_SKIP_EMPTY_AND_NULL_LITERALS(strings)
     QS_INTERNAL_MEMBER_SKIP_EMPTY_AND_NULL_LITERALS(object)
 };
 QS_MEMBER_SKIP_EMPTY_AND_NULL_LITERALS(EmptyClass, str2)
@@ -144,6 +144,29 @@ public:
             }
         }
         return json;
+    }
+    void fromJson(const QJsonValue &val) override
+    {
+        this->QSerializer::fromJson(val);
+        host.clear();
+        auto obj = val.toObject();
+        for (auto it = obj.begin(); it != obj.end(); ++it)
+        {
+            if (it.value().isArray())
+            {
+                const auto &array = it.value().toArray();
+                QStringList arr;
+                for (const auto &item : array)
+                {
+                    arr.append(item.toString());
+                }
+                host.insert(it.key(), arr);
+            }
+            else
+            {
+                host.insert(it.key(), it.value().toString());
+            }
+        }
     }
 };
 

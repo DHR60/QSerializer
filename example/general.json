@@ -165,11 +165,28 @@
             }
         }
     },
+    "emptyClass": {
+        "str4": "test",
+        "str5": "test",
+        "str6": null,
+        "strings": [
+            "first",
+            "second",
+            "third"
+        ]
+    },
     "field": {
         "d_digit": 88.99,
         "digit": 34,
         "flag": false,
         "string": "some string"
+    },
+    "host": {
+        "baidu.com": "127.0.0.1",
+        "dns.google": [
+            "8.8.8.8",
+            "8.8.4.4"
+        ]
     },
     "object": {
         "digit": 8,
@@ -178,9 +195,5 @@
             "second",
             "first"
         ]
-    },
-    "empty": {
-        "str4": "test",
-        "str5": "test"
     }
 }

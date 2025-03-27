@@ -1,38 +1,39 @@
 /*
- MIT License
+ * MIT License
+ * 
+ * Copyright (c) 2020-2021 Agadzhanov Vladimir
+ * Portions Copyright (c) 2021 Jerry Jacobs
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 
- Copyright (c) 2020-2021 Agadzhanov Vladimir
- Portions Copyright (c) 2021 Jerry Jacobs
-
- Permission is hereby granted, free of charge, to any person obtaining a copy
- of this software and associated documentation files (the "Software"), to deal
- in the Software without restriction, including without limitation the rights
- to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- copies of the Software, and to permit persons to whom the Software is
- furnished to do so, subject to the following conditions:
-
- The above copyright notice and this permission notice shall be included in all
- copies or substantial portions of the Software.
-
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- SOFTWARE.
-                                                                                 */
 /*
  * version modified by Massimo Sacchi (RCH S.p.A.) to set QJsonDocument mode
- * (setted as Compact mode)
+ * (set as Compact mode)
  */
 
 /*
  * version modified by DHR60 to
- * add support skip empty values and null
- * fix QJsonDocument mode
- * Support JSON/XML serialization for std::optional<T>
- * Optimize Code
+ * add support for skipping empty values and null,
+ * fix QJsonDocument mode,
+ * support JSON/XML serialization for std::optional<T>,
+ * optimize code warnings
  */
 
 #ifndef QSERIALIZER_H
@@ -219,7 +220,7 @@ class QSerializer {
 #endif
 
 #ifdef QS_HAS_JSON
-  /*! \brief  Serialize all accessed JSON propertyes for this object. */
+  /*! \brief  Serialize all accessed JSON properties for this object. */
   virtual QJsonObject toJson() const {
     QJsonObject json;
 
@@ -263,7 +264,7 @@ class QSerializer {
    * json-serialization. */
   QByteArray toRawJson() const { return toByteArray(toJson()); }
 
-  /*! \brief  Deserialize all accessed XML propertyes for this object. */
+  /*! \brief  Deserialize all accessed XML properties for this object. */
   virtual void fromJson(const QJsonValue& val) {
     if (val.isObject()) {
       QJsonObject json = val.toObject();
@@ -292,7 +293,7 @@ class QSerializer {
     }
   }
 
-  /*! \brief  Deserialize all accessed JSON propertyes for this object. */
+  /*! \brief  Deserialize all accessed JSON properties for this object. */
   void fromJson(const QByteArray& data) {
     fromJson(QJsonDocument::fromJson(data).object());
   }
@@ -316,7 +317,7 @@ class QSerializer {
 #endif  // QS_HAS_JSON
 
 #ifdef QS_HAS_XML
-  /*! \brief  Serialize all accessed XML propertyes for this object. */
+  /*! \brief  Serialize all accessed XML properties for this object. */
   virtual QDomNode toXml() const {
     QDomDocument doc;
     QDomElement el = doc.createElement(metaObject()->className());
@@ -390,36 +391,33 @@ class QSerializer {
    * xml-serialization. */
   QByteArray toRawXml() const { return toByteArray(toXml()); }
 
-  /*! \brief  Deserialize all accessed XML propertyes for this object. */
+  /*! \brief  Deserialize all accessed XML properties for this object. */
   virtual void fromXml(const QDomNode& val) {
     QDomNode doc = val;
+    QDomElement rootElem = doc.firstChildElement(metaObject()->className());
 
-    auto n = doc.firstChildElement(metaObject()->className());
-
-    if (!n.isNull()) {
+    if (!rootElem.isNull()) {
       for (int i = 0; i < metaObject()->propertyCount(); i++) {
-        QString name = metaObject()->property(i).name();
         QDomElement tmp = metaObject()
-                              ->property(i)
-                              .readOnGadget(this)
-                              .value<QDomNode>()
-                              .firstChildElement();
+                             ->property(i)
+                             .readOnGadget(this)
+                             .value<QDomNode>()
+                             .firstChildElement();
 
-        auto f = n.firstChildElement(tmp.tagName());
+        auto f = rootElem.firstChildElement(tmp.tagName());
         metaObject()->property(i).writeOnGadget(
             this, QVariant::fromValue<QDomNode>(f));
       }
     } else {
       for (int i = 0; i < metaObject()->propertyCount(); i++) {
-        QString name = metaObject()->property(i).name();
-        auto f = doc.firstChildElement(name);
+        auto f = doc.firstChildElement(metaObject()->property(i).name());
         metaObject()->property(i).writeOnGadget(
             this, QVariant::fromValue<QDomNode>(f));
       }
     }
   }
 
-  /*! \brief  Deserialize all accessed XML propertyes for this object. */
+  /*! \brief  Deserialize all accessed XML properties for this object. */
   void fromXml(const QByteArray& data) {
     QDomDocument d;
     d.setContent(data);
